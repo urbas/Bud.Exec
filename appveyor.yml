@@ -2,7 +2,7 @@ version: 1.0.0-b{build}
 before_build:
 - ps: nuget restore
 build:
-  project: Bud.FilesObservatory.sln
+  project: Bud.Exec.sln
   verbosity: minimal
 test:
   categories:

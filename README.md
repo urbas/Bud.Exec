@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/489aqx1p9baycw7w/branch/master?svg=true)](https://ci.appveyor.com/project/urbas/bud-filesobservatory/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/r09w19qpguhsv28c/branch/master?svg=true)](https://ci.appveyor.com/project/urbas/bud-exec/branch/master)
 
 
 __Table of contents__
