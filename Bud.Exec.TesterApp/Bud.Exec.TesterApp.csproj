@@ -7,8 +7,8 @@
     <ProjectGuid>{0E6E6413-0B99-439C-BF9C-7661A4846139}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Bud.Exec.TesterApp</RootNamespace>
-    <AssemblyName>Bud.Exec.TesterApp</AssemblyName>
+    <RootNamespace>Bud.ExecTesterApp</RootNamespace>
+    <AssemblyName>Bud.ExecTesterApp</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

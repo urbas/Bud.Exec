@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Bud.Exec.TesterApp.Options;
+using Bud.ExecTesterApp.Options;
 using CommandLine;
 
-namespace Bud.Exec.TesterApp {
+namespace Bud.ExecTesterApp {
   public class Program {
     public static int Main(string[] args)
       => Parser.Default
@@ -13,7 +13,7 @@ namespace Bud.Exec.TesterApp {
                  DoOutputFile, DoErrorExit, DoEcho, DoRun, OnError);
 
     private static int DoRun(RunVerb args)
-      => BatchExec.Run(args.Executable, string.Join(" ", args.Arguments));
+      => Exec.Run(args.Executable, string.Join(" ", args.Arguments));
 
     private static int DoOutputFile(OutputFileVerb args) {
       File.WriteAllText(args.File, args.Text);

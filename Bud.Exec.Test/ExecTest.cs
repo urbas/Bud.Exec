@@ -1,10 +1,10 @@
 ﻿using System;
 using NUnit.Framework;
-using static System.IO.Path;
-using static Bud.BatchExec;
+using static Bud.Exec;
+using static Bud.ExecTesterAppPath;
 
-namespace Bud.Exec {
-  public class BatchExecTest {
+namespace Bud {
+  public class ExecTest {
     [Test]
     public void Run_returns_the_exit_code_of_the_executed_process()
       => Assert.AreEqual(1, Run(GetTesterAppPath()));
@@ -12,7 +12,7 @@ namespace Bud.Exec {
     [Test]
     public void Run_redirects_the_output_to_parents_output()
       => Assert.AreEqual("blargh",
-        CheckOutput(GetTesterAppPath(), $"run {GetTesterAppPath()} echo blargh").Trim());
+                         CheckOutput(GetTesterAppPath(), $"run {GetTesterAppPath()} echo blargh").Trim());
 
     [Test]
     public void Run_redirects_the_stderr_to_parents_stderr() {
@@ -26,9 +26,9 @@ namespace Bud.Exec {
     public void Run_passes_arguments_to_the_process_and_sets_the_working_dir() {
       using (var tmpDir = new TmpDir()) {
         Run(GetTesterAppPath(),
-            args: "output-file foo.txt 42",
+            args: "output-file foo.txt foobar",
             cwd: tmpDir.Path);
-        FileAssert.AreEqual(tmpDir.CreateFile("42", "expected.txt"),
+        FileAssert.AreEqual(tmpDir.CreateFile("foobar", "expected.txt"),
                             tmpDir.CreatePath("foo.txt"));
       }
     }
@@ -38,8 +38,8 @@ namespace Bud.Exec {
       using (var tmpDir = new TmpDir()) {
         var exception = Assert.Throws<Exception>(() => {
           CheckCall(GetTesterAppPath(),
-                          args: "error-exit 42 Sparta",
-                          cwd: tmpDir.Path);
+                    args: "error-exit 42 Sparta",
+                    cwd: tmpDir.Path);
         });
         Assert.That(exception.Message,
                     Does.Contain("'42'")
@@ -58,8 +58,26 @@ namespace Bud.Exec {
     public void CheckOutput_returns_the_stdout_of_the_process()
       => Assert.AreEqual("Sparta", CheckOutput(GetTesterAppPath(), "echo Sparta").Trim());
 
-    private static string GetTesterAppPath()
-      => Combine(GetDirectoryName(typeof(BatchExecTest).Assembly.Location),
-                 "Bud.Exec.TesterApp.exe");
+    [Test]
+    public void Args_simply_joins_parameters_if_args_contain_no_spaces()
+      => Assert.AreEqual("foo bar zar", Args("foo", "bar", "zar"));
+
+    [Test]
+    public void Args_surrounds_parameters_containing_spaces_with_double_quotes()
+      => Assert.AreEqual("\"foo bar\" zar", Args("foo bar", "zar"));
+
+    [Test]
+    public void Args_escapes_quotes_in_arguments()
+      => Assert.AreEqual("foo\"\"\"bar zar", Args("foo\"bar", "zar"));
+
+    [Test]
+    public void Args_integrates_with_CheckOutput() {
+      Assert.AreEqual("foo", CheckOutput(GetTesterAppPath(), Args("echo", "foo")).Trim());
+      Assert.AreEqual("a\"b", CheckOutput(GetTesterAppPath(), Args("echo", "a\"b")).Trim());
+      Assert.AreEqual("a b", CheckOutput(GetTesterAppPath(), Args("echo", "a b")).Trim());
+      Assert.AreEqual("\"", CheckOutput(GetTesterAppPath(), Args("echo", "\"")).Trim());
+      Assert.AreEqual("\"a b\"\"", CheckOutput(GetTesterAppPath(), Args("echo", "\"a b\"\"")).Trim());
+      Assert.AreEqual("\" \"", CheckOutput(GetTesterAppPath(), Args("echo", "\" \"")).Trim());
+    }
   }
 }

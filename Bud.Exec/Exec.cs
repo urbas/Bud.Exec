@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace Bud {
   /// <summary>
@@ -10,7 +12,7 @@ namespace Bud {
   /// <remarks>
   ///   The naming of the functions is partially inspired by Python's subprocess API.
   /// </remarks>
-  public static class BatchExec {
+  public static class Exec {
     /// <summary>
     ///   Runs the executable at path '<paramref name="executablePath" />'
     ///   with the given args '<paramref name="args" />' in the
@@ -61,7 +63,7 @@ namespace Bud {
       process.BeginOutputReadLine();
       var errorOutput = process.StandardError.ReadToEnd();
       process.WaitForExit();
-      AssertProcessSucceeded(executablePath, args, cwd, process, errorOutput);
+      AssertProcessSucceeded(executablePath, args, cwd, errorOutput, process.ExitCode);
       return process;
     }
 
@@ -93,20 +95,41 @@ namespace Bud {
       process.BeginErrorReadLine();
       var output = process.StandardOutput.ReadToEnd();
       process.WaitForExit();
-      AssertProcessSucceeded(executablePath, args, cwd, process, errorOutput.ToString());
+      AssertProcessSucceeded(executablePath, args, cwd, errorOutput.ToString(), process.ExitCode);
       return output;
     }
 
+    /// <summary>
+    ///   Converts a list of command-line parameters to a string. This implementation conforms to the
+    ///   specification at https://msdn.microsoft.com/en-us/library/system.diagnostics.processstartinfo.arguments.
+    /// </summary>
+    /// <param name="args">a list of command-line parameters.</param>
+    /// <returns>
+    ///   A string that can be used as the <paramref name="args"/> parameter
+    ///   to the process-invoking functions like <see cref="CheckOutput"/> and others.
+    /// </returns>
+    public static string Args(params string[] args) => Args((IEnumerable<string>)args);
+
+    /// <summary>
+    ///   Converts a list of command-line parameters to a string. This implementation conforms to the
+    ///   specification at https://msdn.microsoft.com/en-us/library/system.diagnostics.processstartinfo.arguments.
+    /// </summary>
+    /// <param name="args">a list of command-line parameters.</param>
+    /// <returns>
+    ///   A string that can be used as the <paramref name="args"/> parameter
+    ///   to the process-invoking functions like <see cref="CheckOutput"/> and others.
+    /// </returns>
+    public static string Args(IEnumerable<string> args) => string.Join(" ", args.Select(Arg));
+
     private static void AssertProcessSucceeded(string executablePath,
-                                               Option<string> arguments,
-                                               Option<string> workingDir,
-                                               Process process,
-                                               string errorOutput) {
-      if (process.ExitCode != 0) {
+                                               Option<string> args,
+                                               Option<string> cwd,
+                                               string errorOutput, int exitCode) {
+      if (exitCode != 0) {
         throw new Exception($"Command '{executablePath}' " +
-                            GetArgumentsErrorMessagePart(arguments) +
-                            $" at working dir '{workingDir.GetOrElse(Directory.GetCurrentDirectory)}'" +
-                            $" failed with error code '{process.ExitCode}'" +
+                            GetArgumentsErrorMessagePart(args) +
+                            $" at working dir '{cwd.GetOrElse(Directory.GetCurrentDirectory)}'" +
+                            $" failed with error code '{exitCode}'" +
                             $" and error output: {errorOutput}");
       }
     }
@@ -116,25 +139,27 @@ namespace Bud {
                   .GetOrElse("without args");
 
     private static Process CreateProcess(string executablePath,
-                                         Option<string> arguments = default(Option<string>),
-                                         Option<string> workingDir = default(Option<string>)) {
+                                         Option<string> args = default(Option<string>),
+                                         Option<string> cwd = default(Option<string>)) {
       var process = new Process();
-      var argumentsString = arguments.GetOrElse(string.Empty);
-      process.StartInfo = new ProcessStartInfo(executablePath, argumentsString) {
+      var argumentsString = args.GetOrElse(String.Empty);
+      process.StartInfo = new ProcessStartInfo(executablePath) {
         CreateNoWindow = true,
         UseShellExecute = false,
         RedirectStandardOutput = true,
-        RedirectStandardError = true
+        RedirectStandardError = true,
+        Arguments = argumentsString
+        
       };
-      if (workingDir.HasValue) {
-        process.StartInfo.WorkingDirectory = workingDir.Value;
+      if (cwd.HasValue) {
+        process.StartInfo.WorkingDirectory = cwd.Value;
       }
       return process;
     }
 
     private static void ReadErrorOutput(Process process) {
       var errorOutput = process.StandardError.ReadToEnd();
-      if (!string.IsNullOrEmpty(errorOutput)) {
+      if (!String.IsNullOrEmpty(errorOutput)) {
         Console.Error.Write(errorOutput);
       }
     }
@@ -144,6 +169,12 @@ namespace Bud {
       if (outputLine.Data != null) {
         Console.WriteLine(outputLine.Data);
       }
+    }
+
+    private static object Arg(string arg) {
+      var containsSpaces = arg.Contains(" ");
+      var quotesEscaped = arg.Replace("\"", containsSpaces ? "\"\"" : "\"\"\"");
+      return containsSpaces ? $"\"{quotesEscaped}\"" : quotesEscaped;
     }
   }
 }

@@ -7,7 +7,7 @@
     <ProjectGuid>{9E6B061A-6E7D-4FB3-AAEF-F857C8347F63}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Bud.Exec</RootNamespace>
+    <RootNamespace>Bud</RootNamespace>
     <AssemblyName>Bud.Exec.Test</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -46,7 +46,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BatchExecTest.cs" />
+    <Compile Include="ExecTest.cs" />
+    <Compile Include="ExecTesterAppPath.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

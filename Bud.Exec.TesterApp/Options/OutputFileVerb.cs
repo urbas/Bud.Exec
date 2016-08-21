@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace Bud.Exec.TesterApp.Options {
+namespace Bud.ExecTesterApp.Options {
   [Verb("output-file", HelpText = "Outputs text to the given file.")]
   public class OutputFileVerb {
     [Value(0, MetaName = "OUTPUT FILE", HelpText = "The path of the file to which to output the text.", Required = true)]

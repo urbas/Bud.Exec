@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace Bud.Exec.TesterApp.Options {
+namespace Bud.ExecTesterApp.Options {
   [Verb("error-exit", HelpText = "Exits with the given error code and outputs the given error output.")]
   public class ErrorExitVerb {
     [Value(0, MetaName = "EXIT CODE", HelpText = "The exit code with which this process should terminate.", Required = true)]

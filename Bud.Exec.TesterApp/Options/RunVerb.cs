@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using CommandLine;
 
-namespace Bud.Exec.TesterApp.Options {
+namespace Bud.ExecTesterApp.Options {
   [Verb("run", HelpText = "Runs the given executable with given arguments.")]
   public class RunVerb {
     [Value(0, MetaName = "EXECUTABLE", HelpText = "The path of the executable to run.", Required = true)]
