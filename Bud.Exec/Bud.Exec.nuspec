@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/urbas/Bud.Exec</projectUrl>
     <iconUrl>https://ci.appveyor.com/api/projects/status/r09w19qpguhsv28c/branch/master</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>ud.Exec is a C# library for running processes inspired by Python's subprocess functions like `check_call`.</description>
+    <description>Bud.Exec is a C# library for running processes inspired by Python's subprocess functions like `check_call`.</description>
     <releaseNotes>Initial release.</releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>Bud.Exec process execute invoke convenience helper easy</tags>
