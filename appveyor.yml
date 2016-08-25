@@ -4,8 +4,4 @@ before_build:
 build:
   project: Bud.Exec.sln
   verbosity: minimal
-test:
-  categories:
-    except:
-    - AppVeyorIgnore
 deploy: off
