@@ -45,7 +45,7 @@ You can also use `Call` to suppress all output:
 var process = Call("git", "status");
 ```
 
-## Spaces or double-quotation marks in arguments
+## Spaces and double-quotation marks in arguments
 
 If your arguments contain spaces or double-quotation marks, you can use the `Args` method:
 
@@ -89,7 +89,7 @@ CheckCall("git", "status", "/foo/bar");
 All process execution methods in the `Bud.Exec` API take the `env` parameter. This parameter is optional and sets the environment variables of the executed process. Here's an example of how to use it:
 
 ```csharp
-CheckCall("git", "status", env: EnvCopy(EnvVar("FOO_BAR", "42");
+CheckCall("git", "status", env: EnvCopy(EnvVar("FOO_BAR", "42")));
 ```
 
 The example above creates a copy of the environment of the current process and adds the variable `FOO_BAR` to it.
