@@ -8,7 +8,7 @@ namespace Bud {
   public class ExecTest {
     [Test]
     public void Run_returns_the_exit_code_of_the_executed_process()
-      => Assert.AreEqual(1, Run(GetTesterAppPath()).ExitCode);
+      => Assert.AreEqual(1, Run(GetTesterAppPath(), stdout: TextWriter.Null, stderr: TextWriter.Null).ExitCode);
 
     [Test]
     public void Run_redirects_the_output_to_parents_output()
