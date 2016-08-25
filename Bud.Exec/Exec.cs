@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using static Bud.Option;
 
 namespace Bud {
   /// <summary>
@@ -43,7 +42,6 @@ namespace Bud {
     ///   The standard output and standard error of the process are redirected to standard output and
     ///   standard error of this process.
     ///   <para>This method blocks until the process finishes.</para>
-    ///   <para>Note that this function does not redirect standard input.</para>
     /// </remarks>
     public static Process Run(string executablePath,
                               Option<string> args = default(Option<string>),
@@ -62,27 +60,58 @@ namespace Bud {
       process.WaitForExit();
       return process;
     }
+    /// <summary>
+    ///   Runs the executable at path '<paramref name="executablePath" />'
+    ///   with the given args '<paramref name="args" />' in the
+    ///   given working directory '<paramref name="cwd" />',
+    ///   waits for the executable to finish,
+    ///   and returns the exit code of the process.
+    /// </summary>
+    /// <param name="executablePath">the path of the executable to run.</param>
+    /// <param name="args">the args to be passed to the executable.</param>
+    /// <param name="cwd">
+    ///   the working directory in which to run. If omitted, the executable will run in the current
+    ///   working directory.
+    /// </param>
+    /// <param name="env">environment variables to pass to the process.</param>
+    /// <param name="stdin">the contents of this text reader will be </param>
+    /// <returns>the process object that was used to run the process.</returns>
+    /// <remarks>
+    ///   The standard output and standard error of the process are suppressed.
+    ///   <para>This method blocks until the process finishes.</para>
+    /// </remarks>
+    public static Process Call(string executablePath,
+                              Option<string> args = default(Option<string>),
+                              Option<string> cwd = default(Option<string>),
+                              Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>),
+                              Option<TextReader> stdin = default(Option<TextReader>))
+      => Run(executablePath, args, cwd, env, stdout: TextWriter.Null, stderr: TextWriter.Null, stdin: stdin);
 
     /// <summary>
     ///   Runs the command in batch mode (without any input), suppresses all output, and throws an exception
     ///   if it returns a no-zero error code.
     /// </summary>
+    /// <param name="executablePath">the path of the executable to run.</param>
+    /// <param name="args">the args to be passed to the executable.</param>
+    /// <param name="cwd">
+    ///   the working directory in which to run. If omitted, the executable will run in the current
+    ///   working directory.
+    /// </param>
+    /// <param name="env">environment variables to pass to the process.</param>
+    /// <param name="stdin">the contents of this text reader will be </param>
     /// <returns>the <see cref="Process" />object used to run the executable.</returns>
-    /// <exception cref="Exception">
+    /// <exception cref="ExecException">
     ///   thrown if the output exits with non-zero error code. The message
     ///   of the exception will contain the error output and the exit code.
     /// </exception>
     public static Process CheckCall(string executablePath,
                                     Option<string> args = default(Option<string>),
-                                    Option<string> cwd = default(Option<string>)) {
-      var process = CreateProcess(executablePath, args, cwd, None<IDictionary<string, string>>());
-      // NOTE: If we don't read the output to end then sometimes processes get stuck.
-      process.OutputDataReceived += (s, a) => {};
-      process.Start();
-      process.BeginOutputReadLine();
-      var errorOutput = process.StandardError.ReadToEnd();
-      process.WaitForExit();
-      AssertProcessSucceeded(executablePath, args, cwd, errorOutput, process.ExitCode);
+                                    Option<string> cwd = default(Option<string>),
+                                    Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>),
+                                    Option<TextReader> stdin = default(Option<TextReader>)) {
+      var stderr = new StringWriter();
+      var process = Run(executablePath, args, cwd, env, TextWriter.Null, stderr, stdin);
+      AssertProcessSucceeded(executablePath, args, cwd, stderr.ToString(), process.ExitCode);
       return process;
     }
 
@@ -97,23 +126,23 @@ namespace Bud {
     ///   the working directory in which to run. If omitted, the executable will run in the current
     ///   working directory.
     /// </param>
+    /// <param name="env">environment variables to pass to the process.</param>
+    /// <param name="stdin">the contents of this text reader will be </param>
     /// <returns>the captured output of the executed process.</returns>
-    /// <exception cref="Exception">
+    /// <exception cref="ExecException">
     ///   thrown if the output exits with non-zero error code. The message
     ///   of the exception will contain the error output and the exit code.
     /// </exception>
     public static string CheckOutput(string executablePath,
                                      Option<string> args = default(Option<string>),
-                                     Option<string> cwd = default(Option<string>)) {
-      var process = CreateProcess(executablePath, args, cwd, None<IDictionary<string, string>>());
-      var errorOutput = new StringWriter();
-      process.ErrorDataReceived += (s, a) => errorOutput.Write(a.Data);
-      process.Start();
-      process.BeginErrorReadLine();
-      var output = process.StandardOutput.ReadToEnd();
-      process.WaitForExit();
-      AssertProcessSucceeded(executablePath, args, cwd, errorOutput.ToString(), process.ExitCode);
-      return output;
+                                     Option<string> cwd = default(Option<string>),
+                                     Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>),
+                                     Option<TextReader> stdin = default(Option<TextReader>)) {
+      var stderr = new StringWriter();
+      var stdout = new StringWriter();
+      var process = Run(executablePath, args, cwd, env, stdout, stderr, stdin);
+      AssertProcessSucceeded(executablePath, args, cwd, stderr.ToString(), process.ExitCode);
+      return stdout.ToString();
     }
 
     /// <summary>
@@ -153,22 +182,21 @@ namespace Bud {
       return envCopy;
     }
 
+    /// <param name="varName">The name of the environment variable.</param>
+    /// <param name="varValue">The value of the environment variable.</param>
+    /// <returns>a 2-element tuple that can be used in the <see cref="EnvCopy" /> method.</returns>
+    public static Tuple<string, string> EnvVar(string varName, string varValue)
+      => Tuple.Create(varName, varValue);
+
     private static void AssertProcessSucceeded(string executablePath,
                                                Option<string> args,
                                                Option<string> cwd,
-                                               string errorOutput, int exitCode) {
+                                               string errorOutput,
+                                               int exitCode) {
       if (exitCode != 0) {
-        throw new Exception($"Command '{executablePath}' " +
-                            GetArgumentsErrorMessagePart(args) +
-                            $" at working dir '{cwd.GetOrElse(Directory.GetCurrentDirectory)}'" +
-                            $" failed with error code '{exitCode}'" +
-                            $" and error output: {errorOutput}");
+        throw new ExecException(executablePath, args, cwd, errorOutput, exitCode);
       }
     }
-
-    private static string GetArgumentsErrorMessagePart(Option<string> arguments)
-      => arguments.Map(argStr => $"with arguments '{argStr}'")
-                  .GetOrElse("without args");
 
     private static Process CreateProcess(string executablePath,
                                          Option<string> args = default(Option<string>),
@@ -257,7 +285,7 @@ namespace Bud {
     }
 
     private static void ProcessOnErrorDataReceived(object sender,
-                                                    DataReceivedEventArgs outputLine) {
+                                                   DataReceivedEventArgs outputLine) {
       if (outputLine.Data != null) {
         Console.Error.WriteLine(outputLine.Data);
       }

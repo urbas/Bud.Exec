@@ -46,6 +46,7 @@
     <Reference Include="System.DirectoryServices.Protocols" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Options\CallVerb.cs" />
     <Compile Include="Options\EchoInputVerb.cs" />
     <Compile Include="Options\EchoVerb.cs" />
     <Compile Include="Options\EnvVarToFileVerb.cs" />

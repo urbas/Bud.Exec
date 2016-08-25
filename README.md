@@ -8,28 +8,97 @@ __Table of contents__
 
 ## About
 
-Bud.Exec is a C# library for running processes inspired by Python's subprocess functions like `check_call`.
+Bud.Exec is a wrapper around the `System.Diagnostics.Process` API. Bud.Exec provides a number of static methods for executing processes. Bud.Exec's API has been inspired by Python's subprocess functions.
 
-Example of use:
+## Usage
+
+All the API is contained in the `Bud.Exec` static class. You can import this class statically for brevity:
 
 ```csharp
-// This method redirects stdout and stderr to the parent process.
-int exitCode = Bud.Exec.Run("git", "status");
-
-// Throws if the process returns non-zero exit code.
-// Also suppresses all output from stderr and stdout of the executed process.
-// The exception will contain the exit code and error output (if any).
-Bud.Exec.CheckCall("git", "status");
-
-// Throws if the process returns non-zero exit code.
-// Returns the stdout output of the executed process.
-// The exception will contain the exit code and error output (if any).
-Bud.Exec.CheckOutput("git", "status");
-
-// If your arguments contain spaces, you can use `Bud.Exec.Args()`:
-Bud.Exec.CheckOutput("git", Bud.Exec.Args("commit", "-m", "This is a message."));
-
-// To make the above shorter, you can import Bud.Exec statically:
 using static Bud.Exec;
-CheckOutput("git", Args("commit", "-m", "This is a message."));
+```
+
+## The basics
+
+`Run` is the most general method in the `Bud.Exec` API. All other methods in `Bud.Exec` delegate to it.
+
+Here's the simplest way to use `Run`:
+
+```csharp
+var process = Run("git", "status");
+```
+
+The `Run` method returns an object of type `System.Diagnostics.Process`. The process will have terminated before this method returns. You can get the exit code via `process.ExitCode`.
+
+Note that by default the `Run` method pipes standard output and standard error to the standard output and standard error of the parent process. You can change this behaviour by passing `stdout` and `stderr` parameters to the `Run` method:
+
+```csharp
+var stdout = new StringWriter();
+var stderr = new StringWriter();
+var process = Run("git", "status", stdout: stdout, stderr: stderr);
+Console.WriteLine($"stdout: {stdout.ToString}, stderr: {stderr.ToString()}");
+```
+
+You can also use `Call` to suppress all output:
+
+```csharp
+var process = Call("git", "status");
+```
+
+## Spaces or double-quotation marks in arguments
+
+If your arguments contain spaces or double-quotation marks, you can use the `Args` method:
+
+```csharp
+Run("git", Args("commit", "-m", "This message contains \" and spaces."));
+```
+
+## Exceptions on non-zero exit code
+
+You can use methods `CheckCall` and `CheckOutput` to throw exceptions if the process returns a non-zero exit code:
+
+```csharp
+try {
+  CheckCall("git", "status");
+} catch (ExecException ex) {
+  Console.WriteLine(ex.Message);
+}
+```
+
+```csharp
+try {
+  var gitStatus = CheckOutput("git", "status");
+  Console.WriteLine($"Git status: {gitStatus}");
+} catch (ExecException ex) {
+  Console.WriteLine(ex.Message);
+}
+```
+
+Note: the `Message` property contains a great deal of information about the failed process, such as the path of the executable, the arguments passed to it, the working directory of the process, the exit code, and the error output of the process.
+
+## Working directory
+
+All process execution methods in the `Bud.Exec` API take the `cwd` parameter. This parameter is optional and sets the working directory in which the executed process will run. Here's an example of how to use it:
+
+```csharp
+CheckCall("git", "status", "/foo/bar");
+```
+
+## Environment variables
+
+All process execution methods in the `Bud.Exec` API take the `env` parameter. This parameter is optional and sets the environment variables of the executed process. Here's an example of how to use it:
+
+```csharp
+CheckCall("git", "status", env: EnvCopy(EnvVar("FOO_BAR", "42");
+```
+
+The example above creates a copy of the environment of the current process and adds the variable `FOO_BAR` to it.
+
+## Standard input
+
+All process execution methods in the `Bud.Exec` API take the `stdin` parameter. This parameter is optional and passes some input to the executed process. Here's an example of how to use it:
+
+```csharp
+var stdin = new StringReader("this is sparta\n");
+CheckCall("hello-world", stdin: stdin);
 ```

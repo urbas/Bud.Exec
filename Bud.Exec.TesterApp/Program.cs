@@ -8,9 +8,9 @@ namespace Bud.ExecTesterApp {
   public class Program {
     public static int Main(string[] args)
       => Parser.Default
-               .ParseArguments<OutputFileVerb, ErrorExitVerb, EchoVerb, RunVerb, EnvVarToFileVerb, EchoInputVerb>(args)
-               .MapResult<OutputFileVerb, ErrorExitVerb, EchoVerb, RunVerb, EnvVarToFileVerb, EchoInputVerb, int>(
-                 DoOutputFile, DoErrorExit, DoEcho, DoRun, DoEnvVarToFile, DoEchoInputVerb, OnError);
+               .ParseArguments<OutputFileVerb, ErrorExitVerb, EchoVerb, RunVerb, EnvVarToFileVerb, EchoInputVerb, CallVerb>(args)
+               .MapResult<OutputFileVerb, ErrorExitVerb, EchoVerb, RunVerb, EnvVarToFileVerb, EchoInputVerb, CallVerb, int>(
+                 DoOutputFile, DoErrorExit, DoEcho, DoRun, DoEnvVarToFile, DoEchoInputVerb, DoCall, OnError);
 
     private static int DoRun(RunVerb args)
       => Exec.Run(args.Executable, Exec.Args(args.Arguments)).ExitCode;
@@ -40,6 +40,9 @@ namespace Bud.ExecTesterApp {
       Console.WriteLine(inputLine);
       return 0;
     }
+
+    private static int DoCall(CallVerb args)
+      => Exec.Call(args.Executable, Exec.Args(args.Arguments)).ExitCode;
 
     private static int OnError(IEnumerable<Error> errors) {
       return 1;

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using NUnit.Framework;
 using static Bud.Exec;
@@ -19,7 +17,7 @@ namespace Bud {
 
     [Test]
     public void Run_redirects_the_stderr_to_parents_stderr() {
-      var exception = Assert.Throws<Exception>(() => {
+      var exception = Assert.Throws<ExecException>(() => {
         CheckOutput(GetTesterAppPath(), $"run {GetTesterAppPath()} error-exit 1 blargh");
       });
       Assert.That(exception.Message, Does.Contain("blargh"));
@@ -41,7 +39,7 @@ namespace Bud {
       using (var tmpDir = new TmpDir()) {
         Run(GetTesterAppPath(),
             Args("envvar-to-file", tmpDir.CreatePath("foo.txt"), "FOOBAR"),
-            env: EnvCopy(Tuple.Create("FOOBAR", "9001")));
+            env: EnvCopy(EnvVar("FOOBAR", "9001")));
         FileAssert.AreEqual(tmpDir.CreateFile("9001", "expected.txt"),
                             tmpDir.CreatePath("foo.txt"));
       }
@@ -70,19 +68,22 @@ namespace Bud {
     }
 
     [Test]
+    public void Call_suppresses_the_output()
+      => Assert.IsEmpty(CheckOutput(GetTesterAppPath(), Args("call", GetTesterAppPath(), "echo", "blargh")));
+
+    [Test]
     public void CheckCall_throws_exception_with_message_containing_exit_code_and_error_output() {
       using (var tmpDir = new TmpDir()) {
-        var exception = Assert.Throws<Exception>(() => {
+        var exception = Assert.Throws<ExecException>(() => {
           CheckCall(GetTesterAppPath(),
                     args: "error-exit 42 Sparta",
                     cwd: tmpDir.Path);
         });
-        Assert.That(exception.Message,
-                    Does.Contain("'42'")
-                        .And.Contains("error output: Sparta")
-                        .And.Contains(GetTesterAppPath())
-                        .And.Contains("error-exit 42 Sparta")
-                        .And.Contains(tmpDir.Path));
+        Assert.AreEqual(GetTesterAppPath(), exception.ExecutablePath);
+        Assert.AreEqual(Option.Some("error-exit 42 Sparta"), exception.Args);
+        Assert.AreEqual(Option.Some(tmpDir.Path), exception.Cwd);
+        Assert.AreEqual("Sparta", exception.ErrorOutput.Trim());
+        Assert.AreEqual(42, exception.ExitCode);
       }
     }
 
@@ -93,6 +94,19 @@ namespace Bud {
         FileAssert.AreEqual(tmpDir.CreateFile("42", "expected.txt"),
                             tmpDir.CreatePath("foo.txt"));
         Assert.AreEqual(0, process.ExitCode);
+      }
+    }
+
+    [Test]
+    public void CheckOutput_throws_exception_with_message_containing_exit_code_and_error_output() {
+      using (var tmpDir = new TmpDir()) {
+        var exception = Assert.Throws<ExecException>(
+          () => CheckOutput(GetTesterAppPath(), "error-exit 42 Sparta", tmpDir.Path));
+        Assert.AreEqual(GetTesterAppPath(), exception.ExecutablePath);
+        Assert.AreEqual(Option.Some("error-exit 42 Sparta"), exception.Args);
+        Assert.AreEqual(Option.Some(tmpDir.Path), exception.Cwd);
+        Assert.AreEqual("Sparta", exception.ErrorOutput.Trim());
+        Assert.AreEqual(42, exception.ExitCode);
       }
     }
 
