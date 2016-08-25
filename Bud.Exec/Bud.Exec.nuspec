@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Bud.Exec</id>
-    <version>1.0.0-rc1</version>
+    <version>1.0.0-rc2</version>
     <title>Bud.Exec</title>
     <authors>Matej Urbas</authors>
     <owners>Matej Urbas</owners>
@@ -11,7 +11,10 @@
     <iconUrl>https://ci.appveyor.com/api/projects/status/r09w19qpguhsv28c/branch/master</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Bud.Exec is a C# library for running processes inspired by Python's subprocess functions like `check_call`.</description>
-    <releaseNotes>Initial release.</releaseNotes>
+    <releaseNotes>
+      Adds env, stdout, stderr, and stdin parameters.
+      Adds Exec.Call.
+    </releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>Bud.Exec process execute invoke convenience helper easy</tags>
     <dependencies>
