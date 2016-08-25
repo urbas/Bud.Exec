@@ -8,12 +8,12 @@ namespace Bud.ExecTesterApp {
   public class Program {
     public static int Main(string[] args)
       => Parser.Default
-               .ParseArguments<OutputFileVerb, ErrorExitVerb, EchoVerb, RunVerb>(args)
-               .MapResult<OutputFileVerb, ErrorExitVerb, EchoVerb, RunVerb, int>(
-                 DoOutputFile, DoErrorExit, DoEcho, DoRun, OnError);
+               .ParseArguments<OutputFileVerb, ErrorExitVerb, EchoVerb, RunVerb, EnvVarToFileVerb, EchoInputVerb>(args)
+               .MapResult<OutputFileVerb, ErrorExitVerb, EchoVerb, RunVerb, EnvVarToFileVerb, EchoInputVerb, int>(
+                 DoOutputFile, DoErrorExit, DoEcho, DoRun, DoEnvVarToFile, DoEchoInputVerb, OnError);
 
     private static int DoRun(RunVerb args)
-      => Exec.Run(args.Executable, string.Join(" ", args.Arguments));
+      => Exec.Run(args.Executable, Exec.Args(args.Arguments)).ExitCode;
 
     private static int DoOutputFile(OutputFileVerb args) {
       File.WriteAllText(args.File, args.Text);
@@ -27,6 +27,17 @@ namespace Bud.ExecTesterApp {
 
     private static int DoEcho(EchoVerb args) {
       Console.WriteLine(args.EchoText);
+      return 0;
+    }
+
+    private static int DoEnvVarToFile(EnvVarToFileVerb args) {
+      File.WriteAllText(args.File, Environment.GetEnvironmentVariable(args.EnvVar));
+      return 0;
+    }
+
+    private static int DoEchoInputVerb(EchoInputVerb arg) {
+      var inputLine = Console.ReadLine();
+      Console.WriteLine(inputLine);
       return 0;
     }
 

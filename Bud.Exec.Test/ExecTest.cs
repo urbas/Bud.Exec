@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using NUnit.Framework;
 using static Bud.Exec;
 using static Bud.ExecTesterAppPath;
@@ -7,7 +10,7 @@ namespace Bud {
   public class ExecTest {
     [Test]
     public void Run_returns_the_exit_code_of_the_executed_process()
-      => Assert.AreEqual(1, Run(GetTesterAppPath()));
+      => Assert.AreEqual(1, Run(GetTesterAppPath()).ExitCode);
 
     [Test]
     public void Run_redirects_the_output_to_parents_output()
@@ -34,6 +37,39 @@ namespace Bud {
     }
 
     [Test]
+    public void Run_passes_environment_variables_to_the_process() {
+      using (var tmpDir = new TmpDir()) {
+        Run(GetTesterAppPath(),
+            Args("envvar-to-file", tmpDir.CreatePath("foo.txt"), "FOOBAR"),
+            env: EnvCopy(Tuple.Create("FOOBAR", "9001")));
+        FileAssert.AreEqual(tmpDir.CreateFile("9001", "expected.txt"),
+                            tmpDir.CreatePath("foo.txt"));
+      }
+    }
+
+    [Test]
+    public void Run_stores_the_stdout_into_the_given_string_writer() {
+      var stdout = new StringWriter();
+      Run(GetTesterAppPath(), Args("echo", "foobar"), stdout: stdout);
+      Assert.AreEqual("foobar", stdout.ToString().Trim());
+    }
+
+    [Test]
+    public void Run_stores_the_stderr_into_the_given_string_writer() {
+      var stderr = new StringWriter();
+      Run(GetTesterAppPath(), Args("error-exit", "1", "moozar"), stderr: stderr);
+      Assert.AreEqual("moozar", stderr.ToString().Trim());
+    }
+
+    [Test]
+    public void Run_redirects_text_reader_to_stdin() {
+      var stdin = new StringReader("this is sparta\n");
+      var stdout = new StringWriter();
+      Run(GetTesterAppPath(), "echo-input", stdout: stdout, stdin: stdin);
+      Assert.AreEqual("this is sparta", stdout.ToString().Trim());
+    }
+
+    [Test]
     public void CheckCall_throws_exception_with_message_containing_exit_code_and_error_output() {
       using (var tmpDir = new TmpDir()) {
         var exception = Assert.Throws<Exception>(() => {
@@ -51,8 +87,14 @@ namespace Bud {
     }
 
     [Test]
-    public void CheckCall_returns_the_process_object()
-      => Assert.AreEqual(0, CheckCall(GetTesterAppPath(), "error-exit 0").ExitCode);
+    public void CheckCall_invokes_the_application() {
+      using (var tmpDir = new TmpDir()) {
+        var process = CheckCall(GetTesterAppPath(), Args("output-file", "foo.txt", "42"), cwd: tmpDir.Path);
+        FileAssert.AreEqual(tmpDir.CreateFile("42", "expected.txt"),
+                            tmpDir.CreatePath("foo.txt"));
+        Assert.AreEqual(0, process.ExitCode);
+      }
+    }
 
     [Test]
     public void CheckOutput_returns_the_stdout_of_the_process()
@@ -79,5 +121,9 @@ namespace Bud {
       Assert.AreEqual("\"a b\"\"", CheckOutput(GetTesterAppPath(), Args("echo", "\"a b\"\"")).Trim());
       Assert.AreEqual("\" \"", CheckOutput(GetTesterAppPath(), Args("echo", "\" \"")).Trim());
     }
+
+    [Test]
+    public void EnvCopy_returns_a_dictionary_that_equals_to_the_environment_of_this_process()
+      => Assert.AreEqual(Environment.GetEnvironmentVariables(), EnvCopy().Value);
   }
 }

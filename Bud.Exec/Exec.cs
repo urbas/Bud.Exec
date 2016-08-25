@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using static Bud.Option;
 
 namespace Bud {
   /// <summary>
@@ -26,22 +28,39 @@ namespace Bud {
     ///   the working directory in which to run. If omitted, the executable will run in the current
     ///   working directory.
     /// </param>
-    /// <returns>the exit code of the process.</returns>
+    /// <param name="env">environment variables to pass to the process.</param>
+    /// <param name="stdout">
+    ///   the text writer to which the standard output of the process should be written.
+    ///   If no text writer is given, then the output will be streamed to the standard output of the calling process
+    /// </param>
+    /// <param name="stderr">
+    ///   the text writer to which the standard error of the process should be written.
+    ///   If no text writer is given, then the standard error will be streamed to the standard error of the calling process
+    /// </param>
+    /// <param name="stdin">the contents of this text reader will be </param>
+    /// <returns>the process object that was used to run the process.</returns>
     /// <remarks>
     ///   The standard output and standard error of the process are redirected to standard output and
     ///   standard error of this process.
+    ///   <para>This method blocks until the process finishes.</para>
     ///   <para>Note that this function does not redirect standard input.</para>
     /// </remarks>
-    public static int Run(string executablePath,
-                          Option<string> args = default(Option<string>),
-                          Option<string> cwd = default(Option<string>)) {
-      var process = CreateProcess(executablePath, args, cwd);
-      process.OutputDataReceived += ProcessOnOutputDataReceived;
+    public static Process Run(string executablePath,
+                              Option<string> args = default(Option<string>),
+                              Option<string> cwd = default(Option<string>),
+                              Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>),
+                              Option<TextWriter> stdout = default(Option<TextWriter>),
+                              Option<TextWriter> stderr = default(Option<TextWriter>),
+                              Option<TextReader> stdin = default(Option<TextReader>)) {
+      var process = CreateProcess(executablePath, args, cwd, env);
+      HandleStdout(stdout, process);
+      HandleStderr(stderr, process);
       process.Start();
       process.BeginOutputReadLine();
-      ReadErrorOutput(process);
+      process.BeginErrorReadLine();
+      HandleStdin(stdin, process);
       process.WaitForExit();
-      return process.ExitCode;
+      return process;
     }
 
     /// <summary>
@@ -56,7 +75,7 @@ namespace Bud {
     public static Process CheckCall(string executablePath,
                                     Option<string> args = default(Option<string>),
                                     Option<string> cwd = default(Option<string>)) {
-      var process = CreateProcess(executablePath, args, cwd);
+      var process = CreateProcess(executablePath, args, cwd, None<IDictionary<string, string>>());
       // NOTE: If we don't read the output to end then sometimes processes get stuck.
       process.OutputDataReceived += (s, a) => {};
       process.Start();
@@ -86,11 +105,9 @@ namespace Bud {
     public static string CheckOutput(string executablePath,
                                      Option<string> args = default(Option<string>),
                                      Option<string> cwd = default(Option<string>)) {
-      var process = CreateProcess(executablePath, args, cwd);
+      var process = CreateProcess(executablePath, args, cwd, None<IDictionary<string, string>>());
       var errorOutput = new StringWriter();
-      process.ErrorDataReceived += (s, a) => {
-        errorOutput.Write(a.Data);
-      };
+      process.ErrorDataReceived += (s, a) => errorOutput.Write(a.Data);
       process.Start();
       process.BeginErrorReadLine();
       var output = process.StandardOutput.ReadToEnd();
@@ -105,10 +122,10 @@ namespace Bud {
     /// </summary>
     /// <param name="args">a list of command-line parameters.</param>
     /// <returns>
-    ///   A string that can be used as the <paramref name="args"/> parameter
-    ///   to the process-invoking functions like <see cref="CheckOutput"/> and others.
+    ///   A string that can be used as the <paramref name="args" /> parameter
+    ///   to the process-invoking functions like <see cref="CheckOutput" /> and others.
     /// </returns>
-    public static string Args(params string[] args) => Args((IEnumerable<string>)args);
+    public static string Args(params string[] args) => Args((IEnumerable<string>) args);
 
     /// <summary>
     ///   Converts a list of command-line parameters to a string. This implementation conforms to the
@@ -116,10 +133,25 @@ namespace Bud {
     /// </summary>
     /// <param name="args">a list of command-line parameters.</param>
     /// <returns>
-    ///   A string that can be used as the <paramref name="args"/> parameter
-    ///   to the process-invoking functions like <see cref="CheckOutput"/> and others.
+    ///   A string that can be used as the <paramref name="args" /> parameter
+    ///   to the process-invoking functions like <see cref="CheckOutput" /> and others.
     /// </returns>
     public static string Args(IEnumerable<string> args) => string.Join(" ", args.Select(Arg));
+
+    /// <returns>a copy of the current processes' environment.</returns>
+    /// <remarks>
+    ///   This method returns an option to satisfy the type checker when using
+    ///   this method directly as the <c>env</c> parameter in the above process call method.
+    ///   Otherwise, the compiler will not want to implicitly convert the returned dictionary
+    ///   to an option of the dicitionary.
+    /// </remarks>
+    public static Option<IDictionary<string, string>> EnvCopy(params Tuple<string, string>[] overrides) {
+      var envCopy = ToStringDictionary(Environment.GetEnvironmentVariables());
+      foreach (var envVar in overrides) {
+        envCopy[envVar.Item1] = envVar.Item2;
+      }
+      return envCopy;
+    }
 
     private static void AssertProcessSucceeded(string executablePath,
                                                Option<string> args,
@@ -140,27 +172,80 @@ namespace Bud {
 
     private static Process CreateProcess(string executablePath,
                                          Option<string> args = default(Option<string>),
-                                         Option<string> cwd = default(Option<string>)) {
+                                         Option<string> cwd = default(Option<string>),
+                                         Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>)) {
       var process = new Process();
-      var argumentsString = args.GetOrElse(String.Empty);
+      var argumentsString = args.GetOrElse(string.Empty);
       process.StartInfo = new ProcessStartInfo(executablePath) {
         CreateNoWindow = true,
         UseShellExecute = false,
         RedirectStandardOutput = true,
         RedirectStandardError = true,
-        Arguments = argumentsString
-        
+        RedirectStandardInput = true,
+        Arguments = argumentsString,
       };
+      if (env.HasValue) {
+        process.StartInfo.Environment.Clear();
+        foreach (var envVar in env.Value) {
+          process.StartInfo.Environment[envVar.Key] = envVar.Value;
+        }
+      }
       if (cwd.HasValue) {
         process.StartInfo.WorkingDirectory = cwd.Value;
       }
       return process;
     }
 
-    private static void ReadErrorOutput(Process process) {
-      var errorOutput = process.StandardError.ReadToEnd();
-      if (!String.IsNullOrEmpty(errorOutput)) {
-        Console.Error.Write(errorOutput);
+    private static object Arg(string arg) {
+      var containsSpaces = arg.Contains(" ");
+      var quotesEscaped = arg.Replace("\"", containsSpaces ? "\"\"" : "\"\"\"");
+      return containsSpaces ? $"\"{quotesEscaped}\"" : quotesEscaped;
+    }
+
+    private static Dictionary<string, string> ToStringDictionary(IDictionary originalDict) {
+      var dictEnum = originalDict.GetEnumerator();
+      var stringDictionary = new Dictionary<string, string>();
+      while (dictEnum.MoveNext()) {
+        stringDictionary.Add((string) dictEnum.Key, (string) dictEnum.Value);
+      }
+      return stringDictionary;
+    }
+
+    private static void HandleStdout(Option<TextWriter> stdout, Process process) {
+      if (stdout.HasValue) {
+        var stdoutTextWriter = stdout.Value;
+        process.OutputDataReceived += (sender, eventArgs) => {
+          if (eventArgs.Data != null) {
+            stdoutTextWriter.WriteLine(eventArgs.Data);
+          }
+        };
+      } else {
+        process.OutputDataReceived += ProcessOnOutputDataReceived;
+      }
+    }
+
+    private static void HandleStderr(Option<TextWriter> stderr, Process process) {
+      if (stderr.HasValue) {
+        var stdoutTextWriter = stderr.Value;
+        process.ErrorDataReceived += (sender, eventArgs) => {
+          if (eventArgs.Data != null) {
+            stdoutTextWriter.WriteLine(eventArgs.Data);
+          }
+        };
+      } else {
+        process.ErrorDataReceived += ProcessOnErrorDataReceived;
+      }
+    }
+
+    private static void HandleStdin(Option<TextReader> stdin, Process process) {
+      if (!stdin.HasValue) {
+        return;
+      }
+      const int bufferLength = 8192;
+      var buffer = new char[bufferLength];
+      int readCount;
+      while ((readCount = stdin.Value.Read(buffer, 0, bufferLength)) > 0) {
+        process.StandardInput.Write(buffer, 0, readCount);
       }
     }
 
@@ -171,10 +256,11 @@ namespace Bud {
       }
     }
 
-    private static object Arg(string arg) {
-      var containsSpaces = arg.Contains(" ");
-      var quotesEscaped = arg.Replace("\"", containsSpaces ? "\"\"" : "\"\"\"");
-      return containsSpaces ? $"\"{quotesEscaped}\"" : quotesEscaped;
+    private static void ProcessOnErrorDataReceived(object sender,
+                                                    DataReceivedEventArgs outputLine) {
+      if (outputLine.Data != null) {
+        Console.Error.WriteLine(outputLine.Data);
+      }
     }
   }
 }

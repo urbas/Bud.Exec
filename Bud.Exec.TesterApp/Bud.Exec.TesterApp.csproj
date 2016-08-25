@@ -46,7 +46,9 @@
     <Reference Include="System.DirectoryServices.Protocols" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Options\EchoInputVerb.cs" />
     <Compile Include="Options\EchoVerb.cs" />
+    <Compile Include="Options\EnvVarToFileVerb.cs" />
     <Compile Include="Options\ErrorExitVerb.cs" />
     <Compile Include="Options\OutputFileVerb.cs" />
     <Compile Include="Options\RunVerb.cs" />
