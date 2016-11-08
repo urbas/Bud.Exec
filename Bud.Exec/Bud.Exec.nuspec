@@ -16,9 +16,6 @@
     </releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>Bud.Exec process execute invoke convenience helper easy</tags>
-    <dependencies>
-      <dependency id="Bud.Option" version="1.0.1" />
-    </dependencies>
   </metadata>
   <files>
     <file src="bin/Debug/Bud.Exec.dll" target="lib/net46" />
