@@ -44,12 +44,12 @@ namespace Bud {
     ///   <para>This method blocks until the process finishes.</para>
     /// </remarks>
     public static Process Run(string executablePath,
-                              Option<string> args = default(Option<string>),
-                              Option<string> cwd = default(Option<string>),
-                              Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>),
-                              Option<TextWriter> stdout = default(Option<TextWriter>),
-                              Option<TextWriter> stderr = default(Option<TextWriter>),
-                              Option<TextReader> stdin = default(Option<TextReader>)) {
+                              string args = null,
+                              string cwd = null,
+                              IDictionary<string, string> env = null,
+                              TextWriter stdout = null,
+                              TextWriter stderr = null,
+                              TextReader stdin = null) {
       var process = CreateProcess(executablePath, args, cwd, env);
       HandleStdout(stdout, process);
       HandleStderr(stderr, process);
@@ -81,10 +81,10 @@ namespace Bud {
     ///   <para>This method blocks until the process finishes.</para>
     /// </remarks>
     public static Process Call(string executablePath,
-                              Option<string> args = default(Option<string>),
-                              Option<string> cwd = default(Option<string>),
-                              Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>),
-                              Option<TextReader> stdin = default(Option<TextReader>))
+                               string args = null,
+                               string cwd = null,
+                               IDictionary<string, string> env = null,
+                               TextReader stdin = null)
       => Run(executablePath, args, cwd, env, stdout: TextWriter.Null, stderr: TextWriter.Null, stdin: stdin);
 
     /// <summary>
@@ -105,10 +105,10 @@ namespace Bud {
     ///   of the exception will contain the error output and the exit code.
     /// </exception>
     public static Process CheckCall(string executablePath,
-                                    Option<string> args = default(Option<string>),
-                                    Option<string> cwd = default(Option<string>),
-                                    Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>),
-                                    Option<TextReader> stdin = default(Option<TextReader>)) {
+                                    string args = null,
+                                    string cwd = null,
+                                    IDictionary<string, string> env = null,
+                                    TextReader stdin = null) {
       var stderr = new StringWriter();
       var process = Run(executablePath, args, cwd, env, TextWriter.Null, stderr, stdin);
       AssertProcessSucceeded(executablePath, args, cwd, stderr.ToString(), process.ExitCode);
@@ -134,10 +134,10 @@ namespace Bud {
     ///   of the exception will contain the error output and the exit code.
     /// </exception>
     public static string CheckOutput(string executablePath,
-                                     Option<string> args = default(Option<string>),
-                                     Option<string> cwd = default(Option<string>),
-                                     Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>),
-                                     Option<TextReader> stdin = default(Option<TextReader>)) {
+                                     string args = null,
+                                     string cwd = null,
+                                     IDictionary<string, string> env = null,
+                                     TextReader stdin = null) {
       var stderr = new StringWriter();
       var stdout = new StringWriter();
       var process = Run(executablePath, args, cwd, env, stdout, stderr, stdin);
@@ -168,13 +168,7 @@ namespace Bud {
     public static string Args(IEnumerable<string> args) => string.Join(" ", args.Select(Arg));
 
     /// <returns>a copy of the current processes' environment.</returns>
-    /// <remarks>
-    ///   This method returns an option to satisfy the type checker when using
-    ///   this method directly as the <c>env</c> parameter in the above process call method.
-    ///   Otherwise, the compiler will not want to implicitly convert the returned dictionary
-    ///   to an option of the dicitionary.
-    /// </remarks>
-    public static Option<IDictionary<string, string>> EnvCopy(params Tuple<string, string>[] overrides) {
+    public static IDictionary<string, string> EnvCopy(params Tuple<string, string>[] overrides) {
       var envCopy = ToStringDictionary(Environment.GetEnvironmentVariables());
       foreach (var envVar in overrides) {
         envCopy[envVar.Item1] = envVar.Item2;
@@ -189,8 +183,8 @@ namespace Bud {
       => Tuple.Create(varName, varValue);
 
     private static void AssertProcessSucceeded(string executablePath,
-                                               Option<string> args,
-                                               Option<string> cwd,
+                                               string args,
+                                               string cwd,
                                                string errorOutput,
                                                int exitCode) {
       if (exitCode != 0) {
@@ -199,11 +193,11 @@ namespace Bud {
     }
 
     private static Process CreateProcess(string executablePath,
-                                         Option<string> args = default(Option<string>),
-                                         Option<string> cwd = default(Option<string>),
-                                         Option<IDictionary<string, string>> env = default(Option<IDictionary<string, string>>)) {
+                                         string args = null,
+                                         string cwd = null,
+                                         IDictionary<string, string> env = null) {
       var process = new Process();
-      var argumentsString = args.GetOrElse(string.Empty);
+      var argumentsString = args ?? string.Empty;
       process.StartInfo = new ProcessStartInfo(executablePath) {
         CreateNoWindow = true,
         UseShellExecute = false,
@@ -212,14 +206,14 @@ namespace Bud {
         RedirectStandardInput = true,
         Arguments = argumentsString,
       };
-      if (env.HasValue) {
+      if (env != null) {
         process.StartInfo.Environment.Clear();
-        foreach (var envVar in env.Value) {
+        foreach (var envVar in env) {
           process.StartInfo.Environment[envVar.Key] = envVar.Value;
         }
       }
-      if (cwd.HasValue) {
-        process.StartInfo.WorkingDirectory = cwd.Value;
+      if (cwd != null) {
+        process.StartInfo.WorkingDirectory = cwd;
       }
       return process;
     }
@@ -239,40 +233,38 @@ namespace Bud {
       return stringDictionary;
     }
 
-    private static void HandleStdout(Option<TextWriter> stdout, Process process) {
-      if (stdout.HasValue) {
-        var stdoutTextWriter = stdout.Value;
+    private static void HandleStdout(TextWriter stdout, Process process) {
+      if (stdout == null) {
+        process.OutputDataReceived += ProcessOnOutputDataReceived;
+      } else {
         process.OutputDataReceived += (sender, eventArgs) => {
           if (eventArgs.Data != null) {
-            stdoutTextWriter.WriteLine(eventArgs.Data);
+            stdout.WriteLine(eventArgs.Data);
           }
         };
-      } else {
-        process.OutputDataReceived += ProcessOnOutputDataReceived;
       }
     }
 
-    private static void HandleStderr(Option<TextWriter> stderr, Process process) {
-      if (stderr.HasValue) {
-        var stdoutTextWriter = stderr.Value;
+    private static void HandleStderr(TextWriter stderr, Process process) {
+      if (stderr == null) {
+        process.ErrorDataReceived += ProcessOnErrorDataReceived;
+      } else {
         process.ErrorDataReceived += (sender, eventArgs) => {
           if (eventArgs.Data != null) {
-            stdoutTextWriter.WriteLine(eventArgs.Data);
+            stderr.WriteLine(eventArgs.Data);
           }
         };
-      } else {
-        process.ErrorDataReceived += ProcessOnErrorDataReceived;
       }
     }
 
-    private static void HandleStdin(Option<TextReader> stdin, Process process) {
-      if (!stdin.HasValue) {
+    private static void HandleStdin(TextReader stdin, Process process) {
+      if (stdin == null) {
         return;
       }
       const int bufferLength = 8192;
       var buffer = new char[bufferLength];
       int readCount;
-      while ((readCount = stdin.Value.Read(buffer, 0, bufferLength)) > 0) {
+      while ((readCount = stdin.Read(buffer, 0, bufferLength)) > 0) {
         process.StandardInput.Write(buffer, 0, readCount);
       }
     }

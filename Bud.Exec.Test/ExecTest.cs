@@ -80,8 +80,8 @@ namespace Bud {
                     cwd: tmpDir.Path);
         });
         Assert.AreEqual(GetTesterAppPath(), exception.ExecutablePath);
-        Assert.AreEqual(Option.Some("error-exit 42 Sparta"), exception.Args);
-        Assert.AreEqual(Option.Some(tmpDir.Path), exception.Cwd);
+        Assert.AreEqual("error-exit 42 Sparta", exception.Args);
+        Assert.AreEqual(tmpDir.Path, exception.Cwd);
         Assert.AreEqual("Sparta", exception.ErrorOutput.Trim());
         Assert.AreEqual(42, exception.ExitCode);
       }
@@ -103,8 +103,8 @@ namespace Bud {
         var exception = Assert.Throws<ExecException>(
           () => CheckOutput(GetTesterAppPath(), "error-exit 42 Sparta", tmpDir.Path));
         Assert.AreEqual(GetTesterAppPath(), exception.ExecutablePath);
-        Assert.AreEqual(Option.Some("error-exit 42 Sparta"), exception.Args);
-        Assert.AreEqual(Option.Some(tmpDir.Path), exception.Cwd);
+        Assert.AreEqual("error-exit 42 Sparta", exception.Args);
+        Assert.AreEqual(tmpDir.Path, exception.Cwd);
         Assert.AreEqual("Sparta", exception.ErrorOutput.Trim());
         Assert.AreEqual(42, exception.ExitCode);
       }
@@ -138,6 +138,6 @@ namespace Bud {
 
     [Test]
     public void EnvCopy_returns_a_dictionary_that_equals_to_the_environment_of_this_process()
-      => Assert.AreEqual(Environment.GetEnvironmentVariables(), EnvCopy().Value);
+      => Assert.AreEqual(Environment.GetEnvironmentVariables(), EnvCopy());
   }
 }
