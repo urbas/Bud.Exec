@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Bud.Exec</id>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
     <title>Bud.Exec</title>
     <authors>Matej Urbas</authors>
     <owners>Matej Urbas</owners>
@@ -12,8 +12,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Bud.Exec is a C# library for running processes inspired by Python's subprocess functions like `check_call`.</description>
     <releaseNotes>
-      - Default values of all parameters in the Exec API are now `null` instead of `Option.None`.
-      - Removed `Bud.Option` from the API and dependencies.
+      - New function: `Exec.Arg(string)`. This function lets you build command lines like this: `Run("git", $"commit -am {Arg("This is a commit message.")}")`
     </releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>Bud.Exec process execute invoke convenience helper easy</tags>

@@ -176,7 +176,7 @@ namespace Bud {
     ///   <para>
     ///     Example use:
     ///     <code>
-    ///       Run("git", $"commit -am {Arg("This is a commit message")}");
+    ///       Run("git", $"commit -am {Arg("This is a commit message.")}");
     ///     </code>
     ///   </para>
     /// </summary>
