@@ -137,6 +137,18 @@ namespace Bud {
     }
 
     [Test]
+    public void Arg_returns_unchanged_string() => Assert.AreEqual("foo", Arg("foo"));
+
+    [Test]
+    public void Arg_surrounds_with_quotes() => Assert.AreEqual("\"foo bar\"", Arg("foo bar"));
+
+    [Test]
+    public void Arg_escapes_quotes() => Assert.AreEqual("foo\"\"\"bar", Arg("foo\"bar"));
+
+    [Test]
+    public void Arg_surrounds_with_and_escapes_quotes() => Assert.AreEqual("\"foo \"\"bar\"", Arg("foo \"bar"));
+
+    [Test]
     public void EnvCopy_returns_a_dictionary_that_equals_to_the_environment_of_this_process()
       => Assert.AreEqual(Environment.GetEnvironmentVariables(), EnvCopy());
   }

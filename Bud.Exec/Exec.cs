@@ -60,6 +60,7 @@ namespace Bud {
       process.WaitForExit();
       return process;
     }
+
     /// <summary>
     ///   Runs the executable at path '<paramref name="executablePath" />'
     ///   with the given args '<paramref name="args" />' in the
@@ -167,6 +168,27 @@ namespace Bud {
     /// </returns>
     public static string Args(IEnumerable<string> args) => string.Join(" ", args.Select(Arg));
 
+    /// <summary>
+    ///   Turns the given string into a command-line argument usable in functions like <see cref="Run"/>.
+    ///   If necessary, this function will escape special characters the string or enclose the string in
+    ///   quotation marks.
+    ///
+    ///   <para>
+    ///     Example use:
+    ///     <code>
+    ///       Run("git", $"commit -am {Arg("This is a commit message")}");
+    ///     </code>
+    ///   </para>
+    /// </summary>
+    /// <param name="arg"></param>
+    /// <returns>a (potentially escaped and quoted) string that can be inserted as an argument into
+    /// a command line.</returns>
+    public static string Arg(string arg) {
+      var containsSpaces = arg.Contains(" ");
+      var quotesEscaped = arg.Replace("\"", containsSpaces ? "\"\"" : "\"\"\"");
+      return containsSpaces ? $"\"{quotesEscaped}\"" : quotesEscaped;
+    }
+
     /// <returns>a copy of the current processes' environment.</returns>
     public static IDictionary<string, string> EnvCopy(params Tuple<string, string>[] overrides) {
       var envCopy = ToStringDictionary(Environment.GetEnvironmentVariables());
@@ -216,12 +238,6 @@ namespace Bud {
         process.StartInfo.WorkingDirectory = cwd;
       }
       return process;
-    }
-
-    private static object Arg(string arg) {
-      var containsSpaces = arg.Contains(" ");
-      var quotesEscaped = arg.Replace("\"", containsSpaces ? "\"\"" : "\"\"\"");
-      return containsSpaces ? $"\"{quotesEscaped}\"" : quotesEscaped;
     }
 
     private static Dictionary<string, string> ToStringDictionary(IDictionary originalDict) {
