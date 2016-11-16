@@ -81,7 +81,7 @@ Note: the `Message` property contains a great deal of information about the fail
 All process execution methods in the `Bud.Exec` API take the `cwd` parameter. This parameter is optional and sets the working directory in which the executed process will run. Here's an example of how to use it:
 
 ```csharp
-CheckCall("git", "status", "/foo/bar");
+CheckCall("git", "status", cwd: "/foo/bar");
 ```
 
 ## Environment variables
