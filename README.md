@@ -1,11 +1,5 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/r09w19qpguhsv28c/branch/master?svg=true)](https://ci.appveyor.com/project/urbas/bud-exec/branch/master) [![NuGet](https://img.shields.io/nuget/v/Bud.Exec.svg)](https://www.nuget.org/packages/Bud.Exec/)
 
-
-__Table of contents__
-
-* [About](#about)
-
-
 ## About
 
 Bud.Exec is a wrapper around the `System.Diagnostics.Process` API. Bud.Exec provides a number of static methods for executing processes. Bud.Exec's API has been inspired by Python's subprocess functions.
@@ -18,7 +12,7 @@ All the API is contained in the `Bud.Exec` static class. You can import this cla
 using static Bud.Exec;
 ```
 
-## The basics
+## `Run` method
 
 `Run` is the most general method in the `Bud.Exec` API. All other methods in `Bud.Exec` delegate to it.
 
@@ -39,23 +33,35 @@ var process = Run("git", "status", stdout: stdout, stderr: stderr);
 Console.WriteLine($"stdout: {stdout.ToString}, stderr: {stderr.ToString()}");
 ```
 
+## `Call` method
+
 You can also use `Call` to suppress all output:
 
 ```csharp
 var process = Call("git", "status");
 ```
 
-## Spaces and double-quotation marks in arguments
+## `Args` and `Arg` methods
 
-If your arguments contain spaces or double-quotation marks, you can use the `Args` method:
+If your arguments contain spaces or double-quotation marks, you can use the `Args` or `Arg` methods.
+
+You can use the `Args` method to generate the arguments string from a list of strings:
 
 ```csharp
 Run("git", Args("commit", "-m", "This message contains \" and spaces."));
 ```
 
-## Exceptions on non-zero exit code
+You can also use the `Args` and `Arg` method inside a string:
 
-You can use methods `CheckCall` and `CheckOutput` to throw exceptions if the process returns a non-zero exit code:
+```
+Run("git", $"--git-dir {Arg(gitDir)} --work-tree {Arg(workDir)} add {Args(filesList)}");
+```
+
+## `CheckCall` and `CheckOutput` methods
+
+`CheckCall` and `CheckOutput` methods throw exceptions if the process returns with a non-zero exit code.
+
+`CheckCall` suppresses the output of the invoked process. It also returns the `Process` object. Here's an example of how to use the `CheckCall` method:
 
 ```csharp
 try {
@@ -64,6 +70,8 @@ try {
   Console.WriteLine(ex.Message);
 }
 ```
+
+`CheckOutput` returns the string containing the captured standard output of the process. The error output of the process will end up in the exception if the process fails. Here's how you can use the `CheckOutput` method:
 
 ```csharp
 try {
