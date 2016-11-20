@@ -53,7 +53,7 @@ Run("git", Args("commit", "-m", "This message contains \" and spaces."));
 
 You can also use the `Args` and `Arg` method inside a string:
 
-```
+```csharp
 Run("git", $"--git-dir {Arg(gitDir)} --work-tree {Arg(workDir)} add {Args(filesList)}");
 ```
 
