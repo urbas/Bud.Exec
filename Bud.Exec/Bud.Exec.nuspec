@@ -12,7 +12,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Bud.Exec is a C# library for running processes inspired by Python's subprocess functions like `check_call`.</description>
     <releaseNotes>
-      - Bugfix: The `Arg(string)` function did not escape double-quotes correctly on Xamarin, Linux.
+      - Bugfix: The `Arg(string)` function did not escape double-quotes correctly on Xamarin Unix.
     </releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>Bud.Exec process execute invoke convenience helper easy</tags>
