@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using static System.Environment;
 
 namespace Bud {
   /// <summary>
@@ -185,13 +186,13 @@ namespace Bud {
     /// a command line.</returns>
     public static string Arg(string arg) {
       var containsSpaces = arg.Contains(" ");
-      var quotesEscaped = arg.Replace("\"", containsSpaces ? "\"\"" : "\"\"\"");
+      var quotesEscaped = arg.Replace("\"", containsSpaces ? GetQuotedArgQuoteEscape() : GetArgQuoteEscape());
       return containsSpaces ? $"\"{quotesEscaped}\"" : quotesEscaped;
     }
 
     /// <returns>a copy of the current processes' environment.</returns>
     public static IDictionary<string, string> EnvCopy(params Tuple<string, string>[] overrides) {
-      var envCopy = ToStringDictionary(Environment.GetEnvironmentVariables());
+      var envCopy = ToStringDictionary(GetEnvironmentVariables());
       foreach (var envVar in overrides) {
         envCopy[envVar.Item1] = envVar.Item2;
       }
@@ -285,18 +286,20 @@ namespace Bud {
       }
     }
 
-    private static void ProcessOnOutputDataReceived(object sender,
-                                                    DataReceivedEventArgs outputLine) {
+    private static void ProcessOnOutputDataReceived(object sender, DataReceivedEventArgs outputLine) {
       if (outputLine.Data != null) {
         Console.WriteLine(outputLine.Data);
       }
     }
 
-    private static void ProcessOnErrorDataReceived(object sender,
-                                                   DataReceivedEventArgs outputLine) {
+    private static void ProcessOnErrorDataReceived(object sender, DataReceivedEventArgs outputLine) {
       if (outputLine.Data != null) {
         Console.Error.WriteLine(outputLine.Data);
       }
     }
+
+    private static string GetQuotedArgQuoteEscape() => OSVersion.Platform == PlatformID.Unix ? "\\\"" : "\"\"";
+
+    private static string GetArgQuoteEscape() => OSVersion.Platform == PlatformID.Unix ? "\\\"" : "\"\"\"";
   }
 }
