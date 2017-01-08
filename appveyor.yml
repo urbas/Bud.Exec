@@ -16,6 +16,6 @@ deploy:
   provider: NuGet
   api_key:
     secure: vHH6XlHbTmh514SHTC2RTHVZmB+Tv+7WkhGT7Jz+ctyJyYfa9CbSukRVqYhWSh3e
-  artifact: /Bud.Exec/*.nupkg/
+  artifact: 'Bud.Exec/*.nupkg'
   on:
     appveyor_repo_tag: true
