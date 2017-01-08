@@ -3,11 +3,11 @@ Simply create a pull request on GitHub.
 
 # Prerequisites
 
-## Windows
+__Windows__:
 
 - Install Visual Studio 2015 or later.
 
-## Linux or OS X
+__Linux or OS X__:
 
 - Install [latest Mono](http://www.mono-project.com/download/).
 
