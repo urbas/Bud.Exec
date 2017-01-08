@@ -123,10 +123,6 @@ namespace Bud {
       => Assert.AreEqual("\"foo bar\" zar", Args("foo bar", "zar"));
 
     [Test]
-    public void Args_escapes_quotes_in_arguments()
-      => Assert.AreEqual("foo\"\"\"bar zar", Args("foo\"bar", "zar"));
-
-    [Test]
     public void Args_integrates_with_CheckOutput() {
       Assert.AreEqual("foo", CheckOutput(GetTesterAppPath(), Args("echo", "foo")).Trim());
       Assert.AreEqual("a\"b", CheckOutput(GetTesterAppPath(), Args("echo", "a\"b")).Trim());
@@ -141,12 +137,6 @@ namespace Bud {
 
     [Test]
     public void Arg_surrounds_with_quotes() => Assert.AreEqual("\"foo bar\"", Arg("foo bar"));
-
-    [Test]
-    public void Arg_escapes_quotes() => Assert.AreEqual("foo\"\"\"bar", Arg("foo\"bar"));
-
-    [Test]
-    public void Arg_surrounds_with_and_escapes_quotes() => Assert.AreEqual("\"foo \"\"bar\"", Arg("foo \"bar"));
 
     [Test]
     public void EnvCopy_returns_a_dictionary_that_equals_to_the_environment_of_this_process()
