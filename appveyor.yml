@@ -12,6 +12,4 @@ artifacts:
     name: Bud.Exec.dll
   - path: Bud.Exec/bin/Debug/Bud.Exec.xml
     name: Bud.Exec.xml
-  - path: Bud.Exec/bin/Debug/Bud.Exec.xml
-    name: Bud.Exec.nupkg
   - path: 'Bud.Exec/*.nupkg'
