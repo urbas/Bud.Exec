@@ -4,9 +4,14 @@ before_build:
 build:
   project: Bud.Exec.sln
   verbosity: minimal
+before_package:
+  - ps: cd Bud.Exec; nuget pack Bud.Exec.nuspec
 deploy: off
 artifacts:
   - path: Bud.Exec/bin/Debug/Bud.Exec.dll
     name: Bud.Exec.dll
   - path: Bud.Exec/bin/Debug/Bud.Exec.xml
     name: Bud.Exec.xml
+  - path: Bud.Exec/bin/Debug/Bud.Exec.xml
+    name: Bud.Exec.nupkg
+  - path: 'Bud.Exec/bin/Debug/*.nupkg'
