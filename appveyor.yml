@@ -5,3 +5,8 @@ build:
   project: Bud.Exec.sln
   verbosity: minimal
 deploy: off
+artifacts:
+  - path: Bud.Exec/Bud.Exec/bin/Debug/Bud.Exec.dll
+    name: Bud.Exec.dll
+  - path: Bud.Exec/Bud.Exec/bin/Debug/Bud.Exec.xml
+    name: Bud.Exec.xml
