@@ -6,11 +6,13 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Bud.Exec")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Bud.Exec is a wrapper around the `System.Diagnostics.Process` API. Bud.Exec provides " +
+                               "a number of static methods for executing processes. Bud.Exec's API has been inspired " +
+                               "by Python's subprocess functions.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Matej Urbas")]
 [assembly: AssemblyProduct("Bud.Exec")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyCopyright("Copyright © 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
